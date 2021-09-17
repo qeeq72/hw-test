@@ -31,35 +31,33 @@ func Unpack(s string) (string, error) {
 	// 3. Итерируемся по строке
 	for _, r := range s {
 		// 3.1. Если \, то проверяем экран это или просто символ
-		if r == '\\' {
-			if isShield {
-				letter = r
-				isShield = false
-			} else {
-				if letter != 0 {
-					b.WriteRune(letter)
-				}
-				isShield = true
+		if r == '\\' && isShield {
+			letter = r
+			isShield = false
+			continue
+		} else if r == '\\' && !isShield {
+			if letter != 0 {
+				b.WriteRune(letter)
 			}
+			isShield = true
 			continue
 		}
 
 		// 3.2. Если цифра, то проверяем символ это или множитель для предыдущего символа
-		if unicode.IsDigit(r) {
-			if isShield {
-				letter = r
-				isShield = false
-			} else {
-				if letter == 0 {
-					return "", ErrInvalidString
-				}
-				count, err := strconv.Atoi(string(r))
-				if err != nil {
-					return "", ErrInvalidString
-				}
-				b.WriteString(strings.Repeat(string(letter), count))
-				letter = 0
+		if unicode.IsDigit(r) && isShield {
+			letter = r
+			isShield = false
+			continue
+		} else if unicode.IsDigit(r) && !isShield {
+			if letter == 0 {
+				return "", ErrInvalidString
 			}
+			count, err := strconv.Atoi(string(r))
+			if err != nil {
+				return "", ErrInvalidString
+			}
+			b.WriteString(strings.Repeat(string(letter), count))
+			letter = 0
 			continue
 		}
 
