@@ -45,7 +45,6 @@ func Unpack(s string) (string, error) {
 		}
 
 		// 3.2. Если цифра, то проверяем символ это или множитель для предыдущего символа
-		var count int
 		if unicode.IsDigit(r) {
 			if isShield {
 				letter = r
@@ -54,7 +53,10 @@ func Unpack(s string) (string, error) {
 				if letter == 0 {
 					return "", ErrInvalidString
 				}
-				count, _ = strconv.Atoi(string(r))
+				count, err := strconv.Atoi(string(r))
+				if err != nil {
+					return "", ErrInvalidString
+				}
 				b.WriteString(strings.Repeat(string(letter), count))
 				letter = 0
 			}
