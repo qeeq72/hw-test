@@ -7,7 +7,7 @@ import (
 )
 
 // Change to true if needed.
-var taskWithAsteriskIsCompleted = false
+var taskWithAsteriskIsCompleted = true
 
 var text = `Как видите, он  спускается  по  лестнице  вслед  за  своим
 	другом   Кристофером   Робином,   головой   вниз,  пересчитывая
@@ -78,5 +78,41 @@ func TestTop10(t *testing.T) {
 			}
 			require.Equal(t, expected, Top10(text))
 		}
+	})
+}
+
+var nineWordText = "Я пошел гулять со своей собакой поздним воскресным вечером!"
+
+func TestLessThen10(t *testing.T) {
+	t.Run("less than 10 words in text", func(t *testing.T) {
+		require.Len(t, Top10(nineWordText), 0)
+	})
+}
+
+var tenWordText = "Я пошел гулять со своей лохматой собакой поздним воскресным вечером!"
+
+func TestJust10(t *testing.T) {
+	t.Run("positive test", func(t *testing.T) {
+		expected := []string{
+			"вечером",    // 1
+			"воскресным", // 1
+			"гулять",     // 1
+			"лохматой",   // 1
+			"поздним",    // 1
+			"пошел",      // 1
+			"своей",      // 1
+			"со",         // 1
+			"собакой",    // 1
+			"я",          // 1
+		}
+		require.Equal(t, expected, Top10(tenWordText))
+	})
+}
+
+var tenPseudoUniqueWordText = "Собака собака ,собака собака, !собака! сОБАКа просто еще какие-то слова!!!"
+
+func TestPseudoUnique10(t *testing.T) {
+	t.Run("less than 10 unique words", func(t *testing.T) {
+		require.Len(t, Top10(tenPseudoUniqueWordText), 0)
 	})
 }
