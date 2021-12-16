@@ -37,3 +37,27 @@ func TestGetDomainStat(t *testing.T) {
 		require.Equal(t, DomainStat{}, result)
 	})
 }
+
+func TestGetDomainStat_IncorrectDomains(t *testing.T) {
+	data := `{"Id":1,"Name":"Ivan Ivanov","Username":"vanya777","Email":"vanya777@go.com","Phone":"123456789","Password":"InAQJvsq"}
+{"Id":2,"Name":"Petr Petrov","Username":"petruha","Email":"petruha@ra.ru","Password":"SiZLeNSGn","Address":"Fulton Hill 80"}
+{"Id":3,"Name":"Sidr Sidorov","Email":"sidr0n@ololo.net","Phone":"123456789","Password":"71kuz3gA5w","Address":"Monterey Park 39"}
+{"Id":4,"Name":"John Johnson","Username":"JohnyBoi","Email":"JohnyBoi@@ra.ru","Phone":"123456789","Password":"r639qLNu","Address":"Sunfield Park 20"}
+{"Id":5,"Name":"Olga Olegovna","Username":"Olgusik178","Email":"Olgusik178@go.com.com","Phone":"123456789","Password":"acSBF5","Address":"Russell Trail 61"}`
+
+	t.Run("find 'com' (check double domain)", func(t *testing.T) {
+		result, err := GetDomainStat(bytes.NewBufferString(data), "com")
+		require.NoError(t, err)
+		require.Equal(t, DomainStat{
+			"go.com": 1,
+		}, result)
+	})
+
+	t.Run("find 'ru' (check @@)", func(t *testing.T) {
+		result, err := GetDomainStat(bytes.NewBufferString(data), "ru")
+		require.NoError(t, err)
+		require.Equal(t, DomainStat{
+			"ra.ru": 1,
+		}, result)
+	})
+}

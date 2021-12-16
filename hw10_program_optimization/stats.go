@@ -1,12 +1,13 @@
 package hw10programoptimization
 
 import (
-	"encoding/json"
+	"bufio"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"regexp"
 	"strings"
+
+	jsoniter "github.com/json-iterator/go"
 )
 
 type User struct {
@@ -31,36 +32,60 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 
 type users [100_000]User
 
+/*
+	Оптимизации getUsers:
+	1. Использована другая библиотека для ускорения анмаршалинга JSON
+	2. Для экономии памяти используется Scanner
+	3. Не используется каст строки к слайсу байт на входе в функцию анмаршалинга
+*/
 func getUsers(r io.Reader) (result users, err error) {
-	content, err := ioutil.ReadAll(r)
-	if err != nil {
-		return
-	}
+	br := bufio.NewScanner(r)
+	// json := jsoniter.ConfigCompatibleWithStandardLibrary
+	json := jsoniter.ConfigFastest
 
-	lines := strings.Split(string(content), "\n")
-	for i, line := range lines {
+	var count int
+	for br.Scan() {
 		var user User
-		if err = json.Unmarshal([]byte(line), &user); err != nil {
+		if err = json.Unmarshal(br.Bytes(), &user); err != nil {
 			return
 		}
-		result[i] = user
+		result[count] = user
+		count++
 	}
+
 	return
 }
 
+/*
+	Оптимизации countDomains:
+	1. Используется скомпилированная регулярка
+	2. Добавились некоторые проверки на корректность домена
+*/
 func countDomains(u users, domain string) (DomainStat, error) {
 	result := make(DomainStat)
 
-	for _, user := range u {
-		matched, err := regexp.Match("\\."+domain, []byte(user.Email))
-		if err != nil {
-			return nil, err
-		}
+	re, err := regexp.Compile("\\." + domain)
+	if err != nil {
+		return nil, err
+	}
+
+	var num int
+	for i := range u {
+		matched := re.Match([]byte(u[i].Email))
 
 		if matched {
-			num := result[strings.ToLower(strings.SplitN(user.Email, "@", 2)[1])]
+			sep := strings.SplitN(u[i].Email, "@", 3)
+			if len(sep) != 2 {
+				continue
+			}
+			find := strings.ToLower(sep[1])
+			sep = strings.SplitN(u[i].Email, ".", 3)
+			if len(sep) != 2 {
+				continue
+			}
+			num = result[find]
 			num++
-			result[strings.ToLower(strings.SplitN(user.Email, "@", 2)[1])] = num
+			result[find] = num
 		}
 	}
 	return result, nil
