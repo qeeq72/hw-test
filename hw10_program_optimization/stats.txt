@@ -1,0 +1,16 @@
+goos: linux
+goarch: amd64
+pkg: github.com/qeeq72/hw-test/hw10_program_optimization
+cpu: Intel(R) Core(TM) i7-10875H CPU @ 2.30GHz
+BenchmarkGetDomainStat-4   	       4	 267721918 ns/op	76659834 B/op	  786362 allocs/op
+BenchmarkGetDomainStat-4   	       3	 345059966 ns/op	102225258 B/op	 1048482 allocs/op
+BenchmarkGetDomainStat-4   	       1	1080023382 ns/op	306710760 B/op	 3145436 allocs/op
+BenchmarkGetDomainStat-4   	       2	 515601584 ns/op	153300288 B/op	 1572716 allocs/op
+BenchmarkGetDomainStat-4   	       3	 333582432 ns/op	102225013 B/op	 1048481 allocs/op
+BenchmarkGetDomainStat-4   	       6	 176628696 ns/op	51119294 B/op	  524244 allocs/op
+BenchmarkGetDomainStat-4   	       4	 258921035 ns/op	76641456 B/op	  786361 allocs/op
+BenchmarkGetDomainStat-4   	       1	1174803601 ns/op	306598536 B/op	 3145420 allocs/op
+BenchmarkGetDomainStat-4   	       1	1072100925 ns/op	306673304 B/op	 3145427 allocs/op
+BenchmarkGetDomainStat-4   	       1	1070381641 ns/op	306710472 B/op	 3145432 allocs/op
+PASS
+ok  	github.com/qeeq72/hw-test/hw10_program_optimization	36.633s
