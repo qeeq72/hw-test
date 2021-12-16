@@ -14,7 +14,7 @@ type User struct {
 	ID       int
 	Name     string
 	Username string
-	Email    string
+	Email    string `json:"Email"` //nolint:tagliatelle
 	Phone    string
 	Password string
 	Address  string
@@ -41,7 +41,16 @@ type users [100_000]User
 func getUsers(r io.Reader) (result users, err error) {
 	br := bufio.NewScanner(r)
 	// json := jsoniter.ConfigCompatibleWithStandardLibrary
-	json := jsoniter.ConfigFastest
+	// json := jsoniter.ConfigFastest
+
+	cfg := jsoniter.Config{
+		EscapeHTML:                    false,
+		MarshalFloatWith6Digits:       true,
+		ObjectFieldMustBeSimpleString: true,
+		OnlyTaggedField:               true,
+	}
+
+	json := cfg.Froze()
 
 	var count int
 	for br.Scan() {
@@ -59,7 +68,8 @@ func getUsers(r io.Reader) (result users, err error) {
 /*
 	Оптимизации countDomains:
 	1. Используется скомпилированная регулярка
-	2. Добавились некоторые проверки на корректность домена
+	2. Добавились некоторые проверки на корректность домена*
+		*пришлось убрать, т.к. не проходит Optimization test на гите =(
 */
 func countDomains(u users, domain string) (DomainStat, error) {
 	result := make(DomainStat)
@@ -83,6 +93,7 @@ func countDomains(u users, domain string) (DomainStat, error) {
 			if len(sep) != 2 {
 				continue
 			}
+			// find := strings.ToLower(strings.SplitN(u[i].Email, "@", 2)[1])
 			num = result[find]
 			num++
 			result[find] = num
