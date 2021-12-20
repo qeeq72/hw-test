@@ -2,8 +2,10 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"io/ioutil"
 	"net"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -29,7 +31,8 @@ func TestTelnetClient(t *testing.T) {
 			timeout, err := time.ParseDuration("10s")
 			require.NoError(t, err)
 
-			client := NewTelnetClient(l.Addr().String(), timeout, ioutil.NopCloser(in), out)
+			client, err := NewTelnetClient(l.Addr().String(), timeout, ioutil.NopCloser(in), out)
+			require.NoError(t, err)
 			require.NoError(t, client.Connect())
 			defer func() { require.NoError(t, client.Close()) }()
 
@@ -61,5 +64,33 @@ func TestTelnetClient(t *testing.T) {
 		}()
 
 		wg.Wait()
+	})
+
+	t.Run("timeout", func(t *testing.T) {
+		client, err := NewTelnetClient("google.com:8080", 5*time.Second, os.Stdin, os.Stdout)
+		require.NoError(t, err)
+		var netErr net.Error
+		require.True(t, errors.As(client.Connect(), &netErr))
+		require.True(t, netErr.Timeout())
+	})
+
+	t.Run("nil reader", func(t *testing.T) {
+		expectedErrs := TelnetClientErrors{
+			errNilReader,
+		}
+
+		client, err := NewTelnetClient("google.com:8080", 5*time.Second, nil, os.Stdout)
+		require.Equal(t, expectedErrs, err)
+		require.Nil(t, client)
+	})
+
+	t.Run("nil writer", func(t *testing.T) {
+		expectedErrs := TelnetClientErrors{
+			errNilWriter,
+		}
+
+		client, err := NewTelnetClient("google.com:8080", 5*time.Second, os.Stdin, nil)
+		require.Equal(t, expectedErrs, err)
+		require.Nil(t, client)
 	})
 }
