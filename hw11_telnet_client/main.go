@@ -46,7 +46,7 @@ func main() {
 
 	err = client.Connect()
 	if err != nil {
-		log.Println("connection: ", err)
+		log.Print("connection: ", err)
 		return
 	}
 	defer client.Close()
