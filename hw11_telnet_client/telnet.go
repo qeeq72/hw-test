@@ -11,6 +11,8 @@ import (
 var (
 	errNilReader = errors.New("nil reader")
 	errNilWriter = errors.New("nil writer")
+
+	errConnectionIsNotEstablished = errors.New("connection is not established")
 )
 
 type TelnetClientErrors []error
@@ -65,15 +67,29 @@ func (c *TelnetClient) Connect() error {
 }
 
 func (c *TelnetClient) Close() error {
-	return c.conn.Close()
+	c.input.Close()
+	if c.conn != nil {
+		return c.conn.Close()
+	}
+	return nil
 }
 
 func (c *TelnetClient) Send() error {
-	_, err := io.Copy(c.conn, c.input)
-	return err
+	if c.conn == nil {
+		return errConnectionIsNotEstablished
+	}
+	if _, err := io.Copy(c.conn, c.input); err != nil {
+		return fmt.Errorf("send: %w", err)
+	}
+	return nil
 }
 
 func (c *TelnetClient) Receive() error {
-	_, err := io.Copy(c.output, c.conn)
-	return err
+	if c.conn == nil {
+		return errConnectionIsNotEstablished
+	}
+	if _, err := io.Copy(c.output, c.conn); err != nil {
+		return fmt.Errorf("receive: %w", err)
+	}
+	return nil
 }

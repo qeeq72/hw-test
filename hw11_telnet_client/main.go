@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -11,32 +12,20 @@ import (
 	"time"
 )
 
-const (
-	DefaultHost    = "localhost"
-	DefaultPort    = "8080"
-	DefaultTimeout = 5 * time.Second
-)
-
 func main() {
 	var timeout time.Duration
 	var host string
 	var port string
 
-	flag.DurationVar(&timeout, "timeout", DefaultTimeout, "connection timeout")
+	flag.DurationVar(&timeout, "timeout", 10*time.Second, "connection timeout")
 	flag.Parse()
 
 	args := flag.Args()
-	switch len(args) {
-	case 0:
-		host = DefaultHost
-		port = DefaultPort
-	case 1:
-		host = args[0]
-		port = DefaultPort
-	default:
-		host = args[0]
-		port = args[1]
+	if len(args) < 2 {
+		log.Fatal("\nUndefined arguments!\nPlease, use pattern:\n\tgo-telnet [--timeout=10] host port")
 	}
+	host = args[0]
+	port = args[1]
 
 	address := net.JoinHostPort(host, port)
 	client, err := NewTelnetClient(address, timeout, os.Stdin, os.Stdout)
@@ -56,24 +45,32 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
-	go func() {
-		err := client.Send()
+	errCh := make(chan error, 1)
+	defer func() {
+		err := <-errCh
 		if err != nil {
-			fmt.Println("send: ", err)
-		} else {
-			fmt.Fprintln(os.Stderr, "...EOF")
+			fmt.Fprintln(os.Stderr, err)
 		}
-		cancel()
 	}()
 
 	go func() {
-		err := client.Receive()
-		if err != nil {
-			fmt.Println("receive: ", err)
+		defer cancel()
+		err := client.Send()
+		if err == nil {
+			errCh <- errors.New("...EOF")
 		} else {
-			fmt.Fprintln(os.Stderr, "...Connection was closed by peer")
+			errCh <- err
 		}
-		cancel()
+	}()
+
+	go func() {
+		defer cancel()
+		err := client.Receive()
+		if err == nil {
+			errCh <- errors.New("...Connection was closed by peer")
+		} else {
+			errCh <- err
+		}
 	}()
 
 	<-ctx.Done()
