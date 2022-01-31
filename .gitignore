@@ -26,3 +26,7 @@ ehthumbs.db
 Thumbs.db
 .vscode/
 *.bak
+exit
+.gitignore
+ssh_key
+ssh_key.pub
