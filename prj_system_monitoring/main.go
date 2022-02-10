@@ -1,28 +1,34 @@
 package main
 
 import (
-	"fmt"
-	"time"
+	"context"
+	"os"
+	"os/signal"
+	"sync"
 
-	"github.com/qeeq72/hw-test/prj_system_monitoring/internal/cpustat"
+	"github.com/qeeq72/hw-test/prj_system_monitoring/internal/daemon"
+	"github.com/qeeq72/hw-test/prj_system_monitoring/internal/stat/cpu"
+	"github.com/qeeq72/hw-test/prj_system_monitoring/internal/stat/interfaces"
 )
 
 func main() {
-	cpuStat := cpustat.NewCPUStat("/proc/stat", 5)
+	cpuStat := cpu.NewCPUStat("/proc/stat", 3, 10)
+	col := []interfaces.ICollector{cpuStat}
 
-	for {
-		select {
-		case <-cpuStat.AverageDone:
-			fmt.Printf("Load average: %v\n", cpuStat.LoadAverage)
-			fmt.Printf("CPU modes average: %+v\n", cpuStat.ModeStatAverage)
-		default:
-			snapshot, err := cpuStat.MakeSnapshot()
-			if err != nil {
-				fmt.Print(err)
-				return
-			}
-			fmt.Println(*snapshot)
-			time.Sleep(5 * time.Second)
-		}
-	}
+	ctx, cancel := context.WithCancel(context.Background())
+	d := daemon.NewDaemon(col)
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+		d.Run(ctx)
+	}()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt)
+	<-stop
+	cancel()
+	wg.Wait()
 }

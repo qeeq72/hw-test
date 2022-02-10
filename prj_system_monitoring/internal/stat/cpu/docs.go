@@ -1,4 +1,4 @@
-package cpustat
+package cpu
 
 /*
 	Linux - см. /proc/stat
